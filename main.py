@@ -1,10 +1,11 @@
-import hashlib
-from moviepy.editor import VideoFileClip
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import date
 import os
 import uuid
+import cv2
+import datetime
+import tempfile
 
 # initializing the flask instance
 app = Flask(__name__)
@@ -36,8 +37,8 @@ def upload():
     """route to upload your video"""
     video_file = request.files['video']
     file_name = video_file.filename
-    print(type(file_name))
-    print(file_name)
+    temp_file(video_file)
+
     # Validating the video file extension
     allowed_extensions = ('.mp4', '.mkv')
     if not file_name.endswith(allowed_extensions):
@@ -51,9 +52,6 @@ def upload():
     file_size = len(file_data)
     if file_size > (1 * (1024 ** 3)):  # Check if the file size is greater than 1 GB
         return jsonify({"error": "File size exceeds 1 GB."})
-
-    # Check the file duration
-    print("file duration:", get_video_duration(video_file))
 
     # Save the video file to a desired location
     save_path = "media/"
@@ -76,22 +74,45 @@ def upload():
 
 
 def unique_filename(filename):
-    hex_string = hashlib.md5(filename.encode("UTF-8")).hexdigest()
-    print("hash file_name", hex_string)
-    print("unique id", uuid.UUID(hex=hex_string))
-    return str(uuid.UUID(hex=hex_string))
+    extension = filename.split('.')[-1]
+    return f"{uuid.uuid4().hex}.{extension}"
 
 
-def get_video_duration(file):
+def get_video_duration(file_path):
+    # create video capture object
+    data = cv2.VideoCapture(file_path)
+
+    # count the number of frames
+    frames = data.get(cv2.CAP_PROP_FRAME_COUNT)
+    fps = data.get(cv2.CAP_PROP_FPS)
+
+    # calculate duration of the video
+    seconds = round(frames / fps)
+    video_time = datetime.timedelta(seconds=seconds)
+    print(f"duration in seconds: {seconds}")
+    print(f"video time: {video_time}")
+
+
+def temp_file(file):
+    # Create a temporary file
+    temp_dir = tempfile.gettempdir()
+    temp_file = tempfile.NamedTemporaryFile(dir=temp_dir, delete=False)
+
     try:
-        file.seek(0)
-        video = VideoFileClip(file)
-        duration = video.duration
-        video.close()
-        return str(duration)
-    except Exception as e:
-        print(f"Error: {e}")
-        return None
+        # Save the uploaded file to the temporary file
+        file.save(temp_file.name)
+
+        # Here, you can process the temporary file as needed
+        # For example, you can move it to a permanent location, process it, etc.
+        get_video_duration(temp_file.name)
+        # For demonstration purposes, let's print the temporary file's path
+
+        # Rest of your code to handle the uploaded file
+
+    finally:
+        # Close and delete the temporary file
+        temp_file.close()
+        os.remove(temp_file.name)
 
 
 def check_file_size(file_size_in_bytes):
