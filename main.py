@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from datetime import date
+from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy.orm import sessionmaker, declarative_base
 import os
 import uuid
 import cv2
@@ -10,21 +10,24 @@ import tempfile
 # initializing the flask instance
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024 * 1024  # 1GB
+
 # Connect to Database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///videos_hub.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
-app.app_context().push()
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://susan:password@localhost/videohub'
+Base = declarative_base()
+engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
+Session = sessionmaker(bind=engine)
+session = Session()
 
 
-class Videos(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    video_name = db.Column(db.String(250), nullable=False)
-    upload_date = db.Column(db.Date, nullable=False)
-    video_path = db.Column(db.String(255), nullable=False)
+class Video(Base):
+    __tablename__ = 'videos'
+    video_id = Column(Integer, primary_key=True, autoincrement=True)
+    video_name = Column(String(255), nullable=False)
+    video_path = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 
-# db.create_all()
+Base.metadata.create_all(engine)
 
 
 @app.route('/')
@@ -37,8 +40,8 @@ def upload():
     """route to upload your video"""
     video_file = request.files['video']
     file_name = video_file.filename
-    temp_file(video_file)
-
+    file_path = temp_file(video_file)
+    print(file_path)
     # Validating the video file extension
     allowed_extensions = ('.mp4', '.mkv')
     if not file_name.endswith(allowed_extensions):
@@ -53,6 +56,16 @@ def upload():
     if file_size > (1 * (1024 ** 3)):  # Check if the file size is greater than 1 GB
         return jsonify({"error": "File size exceeds 1 GB."})
 
+    # Validate the video duration
+
+    video_duration = get_video_duration(file_path)
+    print(video_duration)
+
+    if video_duration > 600:
+        return jsonify({
+            "error": f"Video duration exceeds 10 min."
+        })
+
     # Save the video file to a desired location
     save_path = "media/"
     if not os.path.exists(save_path):
@@ -62,13 +75,12 @@ def upload():
     video_file.save(video_path)
 
     # save in database
-    new_video = Videos(
+    new_video = Video(
         video_name=file_name,
-        upload_date=date.today(),
         video_path=video_path
     )
-    db.session.add(new_video)
-    db.session.commit()
+    session.add(new_video)
+    session.commit()
 
     return jsonify(response={"success": "Successfully uploaded the video"})
 
@@ -80,44 +92,39 @@ def unique_filename(filename):
 
 def get_video_duration(file_path):
     # create video capture object
-    data = cv2.VideoCapture(file_path)
+    try:
+        # create video capture object
+        print("get_video", file_path)
+        data = cv2.VideoCapture(file_path)
 
-    # count the number of frames
-    frames = data.get(cv2.CAP_PROP_FRAME_COUNT)
-    fps = data.get(cv2.CAP_PROP_FPS)
+        if not data.isOpened():
+            raise ValueError("Failed to open the video file.")
 
-    # calculate duration of the video
-    seconds = round(frames / fps)
-    video_time = datetime.timedelta(seconds=seconds)
-    print(f"duration in seconds: {seconds}")
-    print(f"video time: {video_time}")
+        # count the number of frames
+        frames = data.get(cv2.CAP_PROP_FRAME_COUNT)
+        print("Number of frames:", frames)
+
+        fps = data.get(cv2.CAP_PROP_FPS)
+        print("Frames per second (FPS):", fps)
+
+        # calculate duration of the video
+        seconds = round(frames / fps)
+
+        return seconds
+    except Exception as e:
+        print("Error:", e)
+        return None
 
 
 def temp_file(file):
     # Create a temporary file
-    temp_dir = tempfile.gettempdir()
-    temp_file = tempfile.NamedTemporaryFile(dir=temp_dir, delete=False)
-
-    try:
-        # Save the uploaded file to the temporary file
-        file.save(temp_file.name)
-
-        # Here, you can process the temporary file as needed
-        # For example, you can move it to a permanent location, process it, etc.
-        get_video_duration(temp_file.name)
-        # For demonstration purposes, let's print the temporary file's path
-
-        # Rest of your code to handle the uploaded file
-
-    finally:
-        # Close and delete the temporary file
-        temp_file.close()
-        os.remove(temp_file.name)
-
-
-def check_file_size(file_size_in_bytes):
-    file_size_mb = file_size_in_bytes / (1024 ** 2)
-    file_size_gb = file_size_in_bytes / (1024 ** 3)
+    new_directory_path = os.path.join("media/", 'temp/')
+    if not os.path.exists(new_directory_path):
+        os.mkdir(new_directory_path)
+    save_path = os.path.join(new_directory_path, file.filename)
+    file.save(save_path)
+    # Here, you can process the temporary file as needed
+    return save_path
 
 
 if __name__ == '__main__':
