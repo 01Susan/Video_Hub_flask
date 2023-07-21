@@ -1,0 +1,158 @@
+{
+	"info": {
+		"_postman_id": "52ebd7fd-bb2d-42b6-a466-18e7cf1fdb87",
+		"name": "Videos_Hub",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "26067970"
+	},
+	"item": [
+		{
+			"name": "Upload_Video",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "video",
+							"type": "file",
+							"src": "/C:/Users/dhita/Downloads/pexels_videos_1321208 (2160p).mp4"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/upload",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"upload"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Video by Uploaded Date",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/upload-date?date=2023-07-19",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"upload-date"
+					],
+					"query": [
+						{
+							"key": "date",
+							"value": "2023-07-19"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Video by Video Name",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "Get charge of video by input",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:5000/price-info?duration-in-sec=500&size-in-mb=600&type=mkv",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"price-info"
+					],
+					"query": [
+						{
+							"key": "duration-in-sec",
+							"value": "500"
+						},
+						{
+							"key": "size-in-mb",
+							"value": "600"
+						},
+						{
+							"key": "type",
+							"value": "mkv"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Video Info&Charge by Video",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "video",
+							"type": "file",
+							"src": "/C:/Users/dhita/Downloads/Video/production_id-5002763 (1080p).mp4"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/video_info&charge",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"video_info&charge"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

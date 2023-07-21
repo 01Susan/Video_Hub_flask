@@ -1,10 +1,8 @@
 import datetime
 import os
 
-
 from models import Video
 from video_validation import VideoValidation
-from flask import jsonify
 
 
 def save_as_temp_file(file):
