@@ -4,16 +4,21 @@ from datetime import datetime
 from flask import Flask, request, jsonify
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
 
 from utils import save_as_temp_file, save_original_file, get_search_result, video_charge
 from video_validation import VideoValidation
 
 # initializing the flask instance
 app = Flask(__name__)
-
+load_dotenv()
+USERNAME = os.getenv('USERNAME')
+PASSWORD = os.getenv('PASSWORD')
+DATABASE_NAME = os.getenv('DATABASE_NAME')
+HOST_NAME = os.getenv('HOST_NAME')
 
 # Connect to Database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://susan:password@localhost/videohub'
+app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+mysqlconnector://{USERNAME}:{PASSWORD}@{HOST_NAME}/{DATABASE_NAME}'
 
 engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
 Session = sessionmaker(bind=engine)
@@ -71,6 +76,8 @@ def get_video_by_upload_date():
     except ValueError as e:
         return jsonify({'error': str(e)})
     search_result = get_search_result(search_string=parsed_date, session=session)
+    if len(search_result) == 0:
+        return jsonify({"message": f"No videos found with the given {uploaded_date_str}"}), 404
     return jsonify(video_info=search_result), 200
 
 
@@ -79,6 +86,8 @@ def get_video_by_name():
     """Get video info by name search. Expects 'name' parameter in the request."""
     video_name = request.args.get("name")
     search_result = get_search_result(search_string=video_name, session=session)
+    if len(search_result) == 0:
+        return jsonify({"message": f"No videos found with the given {video_name}"}), 404
     return jsonify(video_info=search_result), 200
 
 

@@ -40,12 +40,8 @@ def get_search_result(search_string, session):
 
     if type(search_string) == datetime.date:
         videos = session.query(Video).filter(Video.created_at.like(f'%{search_string}%')).all()
-
     else:
         videos = session.query(Video).filter(Video.video_name.like(f'%{search_string}%')).all()
-
-    if not videos:
-        return jsonify({"message": f"No videos found with the given {search_string}"}), 404
 
     for video in videos:
         search_result.append(
