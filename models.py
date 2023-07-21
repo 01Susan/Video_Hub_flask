@@ -7,6 +7,7 @@ Base = declarative_base()
 
 
 class Video(Base):
+    """Database model for storing video information."""
     __tablename__ = 'videos'
     video_id = Column(Integer, primary_key=True, autoincrement=True)
     video_name = Column(String(255), nullable=False)
