@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 from utils import save_as_temp_file, save_original_file, get_search_result, video_charge
 from video_validation import VideoValidation
+from models import Base
 
 # initializing the flask instance
 app = Flask(__name__)
@@ -25,7 +26,7 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 
-# Base.metadata.create_all(engine)
+Base.metadata.create_all(engine)
 
 
 @app.route('/')
@@ -77,7 +78,7 @@ def get_video_by_upload_date():
         return jsonify({'error': str(e)})
     search_result = get_search_result(search_string=parsed_date, session=session)
     if len(search_result) == 0:
-        return jsonify({"message": f"No videos found with the given {uploaded_date_str}"}), 404
+        return jsonify({"message": f"No videos found with the searched {uploaded_date_str} date."}), 200
     return jsonify(video_info=search_result), 200
 
 
@@ -87,7 +88,7 @@ def get_video_by_name():
     video_name = request.args.get("name")
     search_result = get_search_result(search_string=video_name, session=session)
     if len(search_result) == 0:
-        return jsonify({"message": f"No videos found with the given {video_name}"}), 404
+        return jsonify({"message": f"No videos found with the searched {video_name} video name."}), 200
     return jsonify(video_info=search_result), 200
 
 
